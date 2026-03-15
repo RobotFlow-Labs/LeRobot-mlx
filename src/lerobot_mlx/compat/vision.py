@@ -46,10 +46,10 @@ def _max_pool_2d(
     stride: int = 2,
     padding: int = 1,
 ) -> mx.array:
-    """Manual 2D max pooling for NHWC tensors.
+    """2D max pooling for NHWC tensors.
 
-    Uses a sliding-window approach: for each output position, slice the
-    corresponding input window and take the element-wise max.
+    Uses nn.MaxPool2d if available (MLX >= 0.22), otherwise falls back
+    to a manual sliding-window approach.
 
     Args:
         x: Input tensor of shape (B, H, W, C) in NHWC format.
@@ -60,6 +60,14 @@ def _max_pool_2d(
     Returns:
         Pooled tensor of shape (B, oH, oW, C).
     """
+    # Try native MaxPool2d first (available in newer MLX versions)
+    try:
+        pool = nn.MaxPool2d(kernel_size=kernel_size, stride=stride, padding=padding)
+        return pool(x)
+    except (AttributeError, TypeError):
+        pass
+
+    # Fallback: manual sliding-window max pooling
     B, H, W, C = x.shape
 
     if padding > 0:

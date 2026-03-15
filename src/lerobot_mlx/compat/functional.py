@@ -568,22 +568,21 @@ def grid_sample(
         ix = ((grid[..., 0] + 1) * W_in - 1) / 2
         iy = ((grid[..., 1] + 1) * H_in - 1) / 2
 
+    # Build batch index array for vectorized gathering (no Python loops over B)
+    b_idx = mx.arange(B).reshape(B, 1, 1)
+    b_idx = mx.broadcast_to(b_idx, (B, H_out, W_out))
+
+    # Convert input to NHWC for spatial indexing
+    x_nhwc = mx.transpose(input, axes=(0, 2, 3, 1))  # (B, H_in, W_in, C)
+
     if mode == "nearest":
         ix_nearest = mx.round(ix).astype(mx.int32)
         iy_nearest = mx.round(iy).astype(mx.int32)
         ix_nearest = mx.clip(ix_nearest, 0, W_in - 1)
         iy_nearest = mx.clip(iy_nearest, 0, H_in - 1)
-        # Gather: for each (b, h, w), get input[b, :, iy, ix]
-        # Use NHWC then transpose back
-        x_nhwc = mx.transpose(input, axes=(0, 2, 3, 1))  # (B, H_in, W_in, C)
-        # Index: need to gather per-batch
-        # Flatten spatial for gathering
-        result_parts = []
-        for b_idx in range(B):
-            gathered = x_nhwc[b_idx, iy_nearest[b_idx], ix_nearest[b_idx]]  # (H_out, W_out, C)
-            result_parts.append(gathered)
-        result = mx.stack(result_parts, axis=0)  # (B, H_out, W_out, C)
-        return mx.transpose(result, axes=(0, 3, 1, 2))  # (B, C, H_out, W_out)
+        # Fully vectorized gather using advanced indexing
+        result_nhwc = x_nhwc[b_idx, iy_nearest, ix_nearest]  # (B, H_out, W_out, C)
+        return mx.transpose(result_nhwc, axes=(0, 3, 1, 2))  # (B, C, H_out, W_out)
 
     elif mode == "bilinear":
         # Floor and ceil indices
@@ -593,53 +592,41 @@ def grid_sample(
         iy1 = iy0 + 1
 
         # Interpolation weights
-        wx1 = ix - ix0.astype(mx.float32)
-        wy1 = iy - iy0.astype(mx.float32)
-        wx0 = 1.0 - wx1
-        wy0 = 1.0 - wy1
+        wx = (ix - ix0.astype(mx.float32)).reshape(B, 1, H_out, W_out)
+        wy = (iy - iy0.astype(mx.float32)).reshape(B, 1, H_out, W_out)
 
-        def _clamp_and_gather(x_idx, y_idx):
-            """Gather values from input at (y_idx, x_idx) with padding."""
-            if padding_mode == "zeros":
-                valid = (x_idx >= 0) & (x_idx < W_in) & (y_idx >= 0) & (y_idx < H_in)
-                x_clamped = mx.clip(x_idx, 0, W_in - 1)
-                y_clamped = mx.clip(y_idx, 0, H_in - 1)
-            elif padding_mode == "border":
-                x_clamped = mx.clip(x_idx, 0, W_in - 1)
-                y_clamped = mx.clip(y_idx, 0, H_in - 1)
-                valid = None
-            else:
-                x_clamped = mx.clip(x_idx, 0, W_in - 1)
-                y_clamped = mx.clip(y_idx, 0, H_in - 1)
-                valid = None
+        # Compute validity masks for zeros padding before clamping
+        if padding_mode == "zeros":
+            mask_x0 = (ix0 >= 0) & (ix0 < W_in)
+            mask_y0 = (iy0 >= 0) & (iy0 < H_in)
+            mask_x1 = (ix1 >= 0) & (ix1 < W_in)
+            mask_y1 = (iy1 >= 0) & (iy1 < H_in)
 
-            # Gather per-batch using NHWC layout
-            x_nhwc = mx.transpose(input, axes=(0, 2, 3, 1))  # (B, H_in, W_in, C)
-            result_parts = []
-            for b_idx in range(B):
-                gathered = x_nhwc[b_idx, y_clamped[b_idx], x_clamped[b_idx]]  # (H_out, W_out, C)
-                result_parts.append(gathered)
-            gathered = mx.stack(result_parts, axis=0)  # (B, H_out, W_out, C)
-            # Transpose to (B, C, H_out, W_out)
-            gathered = mx.transpose(gathered, axes=(0, 3, 1, 2))
+        # Clamp indices to valid range for gathering
+        ix0c = mx.clip(ix0, 0, W_in - 1)
+        iy0c = mx.clip(iy0, 0, H_in - 1)
+        ix1c = mx.clip(ix1, 0, W_in - 1)
+        iy1c = mx.clip(iy1, 0, H_in - 1)
 
-            if valid is not None:
-                valid_expanded = mx.expand_dims(valid, axis=1)  # (B, 1, H_out, W_out)
-                gathered = gathered * valid_expanded.astype(gathered.dtype)
-            return gathered
+        # Vectorized gather for all four corners (no Python loops)
+        v00 = mx.transpose(x_nhwc[b_idx, iy0c, ix0c], axes=(0, 3, 1, 2))  # (B, C, H_out, W_out)
+        v01 = mx.transpose(x_nhwc[b_idx, iy1c, ix0c], axes=(0, 3, 1, 2))
+        v10 = mx.transpose(x_nhwc[b_idx, iy0c, ix1c], axes=(0, 3, 1, 2))
+        v11 = mx.transpose(x_nhwc[b_idx, iy1c, ix1c], axes=(0, 3, 1, 2))
 
-        v00 = _clamp_and_gather(ix0, iy0)
-        v01 = _clamp_and_gather(ix0, iy1)
-        v10 = _clamp_and_gather(ix1, iy0)
-        v11 = _clamp_and_gather(ix1, iy1)
+        # Apply validity masks for zeros padding
+        if padding_mode == "zeros":
+            m00 = (mask_x0 & mask_y0).reshape(B, 1, H_out, W_out).astype(v00.dtype)
+            m01 = (mask_x0 & mask_y1).reshape(B, 1, H_out, W_out).astype(v01.dtype)
+            m10 = (mask_x1 & mask_y0).reshape(B, 1, H_out, W_out).astype(v10.dtype)
+            m11 = (mask_x1 & mask_y1).reshape(B, 1, H_out, W_out).astype(v11.dtype)
+            v00 = v00 * m00
+            v01 = v01 * m01
+            v10 = v10 * m10
+            v11 = v11 * m11
 
-        # Expand weights for channel dimension: (B, H_out, W_out) -> (B, 1, H_out, W_out)
-        wx0 = mx.expand_dims(wx0, axis=1)
-        wx1 = mx.expand_dims(wx1, axis=1)
-        wy0 = mx.expand_dims(wy0, axis=1)
-        wy1 = mx.expand_dims(wy1, axis=1)
-
-        result = wy0 * (wx0 * v00 + wx1 * v10) + wy1 * (wx0 * v01 + wx1 * v11)
+        # Bilinear interpolation
+        result = (1 - wy) * (1 - wx) * v00 + wy * (1 - wx) * v01 + (1 - wy) * wx * v10 + wy * wx * v11
         return result
     else:
         raise NotImplementedError(f"grid_sample mode '{mode}' not implemented.")

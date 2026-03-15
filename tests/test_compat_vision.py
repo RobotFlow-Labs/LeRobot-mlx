@@ -93,6 +93,15 @@ class TestMaxPool2d:
         y = _max_pool_2d(x, kernel_size=3, stride=2, padding=1)
         assert y.shape == (1, 56, 56, 64)
 
+    def test_maxpool_uses_native_or_fallback(self):
+        """_max_pool_2d should work regardless of nn.MaxPool2d availability."""
+        from lerobot_mlx.compat.vision import _max_pool_2d
+        x = mx.random.normal((1, 4, 4, 2))
+        y = _max_pool_2d(x, kernel_size=2, stride=2, padding=0)
+        assert y.shape == (1, 2, 2, 2)
+        mx.eval(y)
+        assert np.all(np.isfinite(np.array(y)))
+
 
 class TestBasicBlock:
     """Test the ResNet basic residual block."""

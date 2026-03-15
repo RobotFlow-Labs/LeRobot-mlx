@@ -43,6 +43,71 @@ class Conv1d(Module):
         return mx.transpose(x, axes=(0, 2, 1))
 
 
+class ConvTranspose1d(Module):
+    """ConvTranspose1d with PyTorch NCL convention wrapping MLX NLC convention.
+
+    Uses MLX's native conv_transpose1d function.
+    Input/output use PyTorch NCL (channels-first) convention.
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
+                 output_padding=0, groups=1, bias=True):
+        super().__init__()
+        self.stride = stride
+        self.padding = padding
+        self.output_padding = output_padding
+        self.groups = groups
+
+        # MLX conv_transpose1d weight shape: (C_out, K, C_in)
+        import math
+        fan_in = in_channels * kernel_size
+        k = 1.0 / math.sqrt(fan_in)
+        self.weight = mx.random.uniform(
+            low=-k, high=k,
+            shape=(out_channels, kernel_size, in_channels),
+        )
+        if bias:
+            self.bias = mx.random.uniform(low=-k, high=k, shape=(out_channels,))
+        else:
+            self.bias = None
+
+    def __call__(self, x):
+        # x: (B, C_in, L_in) -> (B, L_in, C_in) for MLX
+        x = mx.transpose(x, axes=(0, 2, 1))
+        result = mx.conv_transpose1d(
+            x, self.weight,
+            stride=self.stride,
+            padding=self.padding,
+            output_padding=self.output_padding,
+            groups=self.groups,
+        )
+        if self.bias is not None:
+            result = result + self.bias
+        # (B, L_out, C_out) -> (B, C_out, L_out) back to PyTorch convention
+        return mx.transpose(result, axes=(0, 2, 1))
+
+
+class GroupNorm1d(Module):
+    """GroupNorm wrapper for channels-first (B, C, L) format.
+
+    MLX's GroupNorm expects channels-last (B, ..., C), so we transpose
+    before and after the operation.
+    """
+
+    def __init__(self, num_groups: int, num_channels: int, eps: float = 1e-5, affine: bool = True):
+        super().__init__()
+        self.gn = _nn.GroupNorm(num_groups, num_channels)
+
+    def __call__(self, x: mx.array) -> mx.array:
+        if x.ndim == 3:
+            # (B, C, L) -> (B, L, C)
+            x = mx.transpose(x, axes=(0, 2, 1))
+            x = self.gn(x)
+            # (B, L, C) -> (B, C, L)
+            return mx.transpose(x, axes=(0, 2, 1))
+        return self.gn(x)
+
+
 class Conv2d(Module):
     """Conv2d with PyTorch NCHW convention wrapping MLX NHWC convention."""
 
@@ -159,7 +224,8 @@ class ModuleList(Module):
 
     def __init__(self, modules: Sequence[Any] | None = None):
         super().__init__()
-        self._modules_list: list[Any] = []
+        # Use object.__setattr__ to avoid mlx.nn.Module.__setattr__ -> __setitem__ recursion
+        object.__setattr__(self, "_modules_list", [])
         if modules is not None:
             for m in modules:
                 self.append(m)
@@ -167,7 +233,10 @@ class ModuleList(Module):
     def append(self, module: Any) -> "ModuleList":
         """Append a module and register it as an indexed attribute."""
         idx = len(self._modules_list)
-        setattr(self, f"module_{idx}", module)
+        # Use dict.__setitem__ to store the child in mlx's dict-based storage
+        # (which is what parameters() walks), while avoiding the recursion from
+        # mlx.nn.Module.__setattr__ -> self.__setitem__ -> __setattr__.
+        dict.__setitem__(self, f"module_{idx}", module)
         self._modules_list.append(module)
         return self
 
@@ -180,7 +249,25 @@ class ModuleList(Module):
     def __getitem__(self, idx):
         if isinstance(idx, slice):
             return ModuleList(self._modules_list[idx])
+        if isinstance(idx, str):
+            # MLX Module.update() accesses children by attribute name (e.g. "module_0")
+            if idx.startswith("module_") and idx[7:].isdigit():
+                return self._modules_list[int(idx[7:])]
+            return getattr(self, idx)
         return self._modules_list[idx]
+
+    def __setitem__(self, idx, value):
+        if isinstance(idx, str):
+            if idx.startswith("module_") and idx[7:].isdigit():
+                int_idx = int(idx[7:])
+                if hasattr(self, '_modules_list') and int_idx < len(self._modules_list):
+                    self._modules_list[int_idx] = value
+            # Use dict.__setitem__ for mlx parameter discovery, avoiding recursion
+            dict.__setitem__(self, idx, value)
+            return
+        if hasattr(self, '_modules_list') and idx < len(self._modules_list):
+            self._modules_list[idx] = value
+        dict.__setitem__(self, f"module_{idx}", value)
 
     def __len__(self) -> int:
         return len(self._modules_list)
@@ -205,9 +292,9 @@ class ModuleDict(Module):
                 self[k] = v
 
     def __setitem__(self, key: str, module: Any) -> None:
-        # Use object.__setattr__ to set the attribute, then update our dict.
-        # We can't use _nn.Module.__setattr__ because it calls self[key] = val.
-        object.__setattr__(self, key, module)
+        # Use dict.__setitem__ to store in mlx's dict-based storage for parameter discovery,
+        # while avoiding recursion from __setattr__ -> __setitem__ -> __setattr__.
+        dict.__setitem__(self, key, module)
         self._modules_dict[key] = module
 
     def __getitem__(self, key: str) -> Any:

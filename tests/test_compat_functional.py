@@ -653,6 +653,30 @@ class TestGridSample:
         mx.eval(result)
         assert result.shape == (B, C, H_out, W_out)
 
+    def test_grid_sample_batch_multi(self):
+        """Grid sample with batch_size > 1 and multiple channels."""
+        B, C, H, W = 4, 8, 6, 6
+        input_data = mx.random.normal((B, C, H, W))
+        # Identity grid
+        gy = mx.linspace(-1, 1, H).reshape(H, 1)
+        gx = mx.linspace(-1, 1, W).reshape(1, W)
+        gy = mx.broadcast_to(gy, (H, W))
+        gx = mx.broadcast_to(gx, (H, W))
+        grid = mx.stack([gx, gy], axis=-1)
+        grid = mx.broadcast_to(mx.expand_dims(grid, axis=0), (B, H, W, 2))
+        result = F.grid_sample(input_data, grid, mode="bilinear", align_corners=True)
+        mx.eval(result)
+        np.testing.assert_allclose(np.array(result), np.array(input_data), atol=1e-4)
+
+    def test_grid_sample_no_batch_loop(self):
+        """Verify grid_sample works correctly with large batch (vectorized)."""
+        B, C, H, W = 16, 2, 4, 4
+        input_data = mx.random.normal((B, C, H, W))
+        grid = mx.random.uniform(shape=(B, 3, 3, 2), low=-1.0, high=1.0)
+        result = F.grid_sample(input_data, grid, mode="nearest")
+        mx.eval(result)
+        assert result.shape == (B, C, 3, 3)
+
 
 # =============================================================================
 # Normal Distribution

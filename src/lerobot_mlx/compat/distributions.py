@@ -7,10 +7,19 @@ used by ACT (CVAE), SAC (stochastic policy), and other LeRobot policies.
 Copyright (c) 2025 AIFLOW LABS / RobotFlow Labs
 """
 
-import math
+import math  # used in Normal.log_prob, Normal.entropy
 
 import mlx.core as mx
 import numpy as np
+
+
+def _lgamma_array(x):
+    """Vectorized lgamma using math.lgamma (no scipy dependency).
+
+    Works with any NumPy version (np.lgamma was removed in NumPy 2.0).
+    """
+    x = np.asarray(x, dtype=np.float64)
+    return np.vectorize(math.lgamma)(x)
 
 
 def _log_beta(a, b):
@@ -26,8 +35,7 @@ def _log_beta(a, b):
     Returns:
         numpy array of log-beta values.
     """
-    from numpy import array as _  # ensure numpy is available
-    return np.vectorize(math.lgamma)(a) + np.vectorize(math.lgamma)(b) - np.vectorize(math.lgamma)(a + b)
+    return _lgamma_array(a) + _lgamma_array(b) - _lgamma_array(a + b)
 
 
 class Normal:
