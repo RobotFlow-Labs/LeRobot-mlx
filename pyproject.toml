@@ -40,6 +40,9 @@ torch = [
 [project.scripts]
 lerobot-mlx-train = "lerobot_mlx.scripts.train:main"
 lerobot-mlx-eval = "lerobot_mlx.scripts.eval:main"
+lerobot-mlx-info = "lerobot_mlx.scripts.info:main"
+lerobot-mlx-convert = "lerobot_mlx.scripts.convert:main"
+lerobot-mlx-benchmark = "lerobot_mlx.scripts.benchmark:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

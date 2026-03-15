@@ -11,15 +11,26 @@ _POLICY_REGISTRY = {
     "act": ("lerobot_mlx.policies.act", "ACTPolicy"),
     "diffusion": ("lerobot_mlx.policies.diffusion", "DiffusionPolicy"),
     "sac": ("lerobot_mlx.policies.sac", "SACPolicy"),
-    # Add as policies are ported:
-    # "tdmpc": ("lerobot_mlx.policies.tdmpc", "TDMPCPolicy"),
-    # "vqbet": ("lerobot_mlx.policies.vqbet", "VQBeTPolicy"),
+    "tdmpc": ("lerobot_mlx.policies.tdmpc", "TDMPCPolicy"),
+    "vqbet": ("lerobot_mlx.policies.vqbet", "VQBeTPolicy"),
+    "sarm": ("lerobot_mlx.policies.sarm", "SARMRewardModel"),
+    "pi0": ("lerobot_mlx.policies.pi0", "Pi0Policy"),
+    "pi05": ("lerobot_mlx.policies.pi05", "Pi05Policy"),
+    "pi0_fast": ("lerobot_mlx.policies.pi0_fast", "Pi0FastPolicy"),
+    "smolvla": ("lerobot_mlx.policies.smolvla", "SmolVLAPolicy"),
 }
 
 _CONFIG_REGISTRY = {
     "act": ("lerobot_mlx.policies.act", "ACTConfig"),
     "diffusion": ("lerobot_mlx.policies.diffusion", "DiffusionConfig"),
     "sac": ("lerobot_mlx.policies.sac", "SACConfig"),
+    "tdmpc": ("lerobot_mlx.policies.tdmpc", "TDMPCConfig"),
+    "vqbet": ("lerobot_mlx.policies.vqbet", "VQBeTConfig"),
+    "sarm": ("lerobot_mlx.policies.sarm", "SARMConfig"),
+    "pi0": ("lerobot_mlx.policies.pi0", "Pi0Config"),
+    "pi05": ("lerobot_mlx.policies.pi05", "Pi05Config"),
+    "pi0_fast": ("lerobot_mlx.policies.pi0_fast", "Pi0FastConfig"),
+    "smolvla": ("lerobot_mlx.policies.smolvla", "SmolVLAConfig"),
 }
 
 
@@ -91,10 +102,18 @@ def available_policies():
 
 
 def _detect_type(config):
-    """Detect policy type from config object."""
+    """Detect policy type from config object.
+
+    Matches registry keys against the lowercase class name. Longer keys
+    are checked first so that e.g. ``pi0_fast`` is matched before ``pi0``.
+    """
     cls_name = type(config).__name__.lower()
-    for name in _POLICY_REGISTRY:
-        if name in cls_name:
+    # Sort keys by length descending so more specific names match first
+    # (e.g. "pi0_fast" before "pi0", "pi05" before "pi0")
+    for name in sorted(_POLICY_REGISTRY, key=len, reverse=True):
+        # Normalise: strip underscores for comparison (pi0_fast -> pi0fast)
+        normalised_name = name.replace("_", "")
+        if normalised_name in cls_name:
             return name
     if hasattr(config, "type"):
         return config.type

@@ -1,0 +1,291 @@
+{
+  "system": {
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.12.12",
+    "mlx_version": "0.31.1",
+    "timestamp": "2026-03-15T10:56:28.042668"
+  },
+  "inference": [
+    {
+      "policy": "ACT",
+      "batch_size": 1,
+      "create_ms": 76.7,
+      "median_ms": 2.799,
+      "mean_ms": 2.912,
+      "min_ms": 2.151,
+      "max_ms": 6.161,
+      "throughput": 357.3,
+      "peak_mb": 0.9,
+      "params": 192286
+    },
+    {
+      "policy": "ACT",
+      "batch_size": 4,
+      "create_ms": 3.06,
+      "median_ms": 2.986,
+      "mean_ms": 2.946,
+      "min_ms": 2.346,
+      "max_ms": 4.596,
+      "throughput": 334.9,
+      "peak_mb": 1.5,
+      "params": 192286
+    },
+    {
+      "policy": "Diffusion",
+      "batch_size": 1,
+      "create_ms": 4.74,
+      "median_ms": 2.648,
+      "mean_ms": 2.847,
+      "min_ms": 2.123,
+      "max_ms": 6.918,
+      "throughput": 377.7,
+      "peak_mb": 10.9,
+      "params": 259040
+    },
+    {
+      "policy": "Diffusion",
+      "batch_size": 4,
+      "create_ms": 1.67,
+      "median_ms": 2.196,
+      "mean_ms": 2.277,
+      "min_ms": 2.023,
+      "max_ms": 3.228,
+      "throughput": 455.4,
+      "peak_mb": 12.6,
+      "params": 259040
+    },
+    {
+      "policy": "SAC",
+      "batch_size": 1,
+      "create_ms": 16.93,
+      "median_ms": 0.489,
+      "mean_ms": 0.602,
+      "min_ms": 0.394,
+      "max_ms": 2.332,
+      "throughput": 2045.5,
+      "peak_mb": 1.1,
+      "params": 428621
+    },
+    {
+      "policy": "SAC",
+      "batch_size": 4,
+      "create_ms": 5.36,
+      "median_ms": 0.615,
+      "mean_ms": 0.677,
+      "min_ms": 0.522,
+      "max_ms": 1.537,
+      "throughput": 1626.8,
+      "peak_mb": 1.1,
+      "params": 428621
+    },
+    {
+      "policy": "TD-MPC",
+      "batch_size": 1,
+      "create_ms": 14.12,
+      "median_ms": 2.085,
+      "mean_ms": 2.114,
+      "min_ms": 1.958,
+      "max_ms": 3.055,
+      "throughput": 479.7,
+      "peak_mb": 0.1,
+      "params": 36750
+    },
+    {
+      "policy": "TD-MPC",
+      "batch_size": 4,
+      "create_ms": 6.79,
+      "median_ms": 2.164,
+      "mean_ms": 2.194,
+      "min_ms": 2.043,
+      "max_ms": 3.1,
+      "throughput": 462.0,
+      "peak_mb": 0.1,
+      "params": 36750
+    },
+    {
+      "policy": "Pi0",
+      "batch_size": 1,
+      "create_ms": 293.89,
+      "median_ms": 17.349,
+      "mean_ms": 17.423,
+      "min_ms": 16.129,
+      "max_ms": 19.419,
+      "throughput": 57.6,
+      "peak_mb": 1288.6,
+      "params": 314639368
+    },
+    {
+      "policy": "Pi0",
+      "batch_size": 4,
+      "create_ms": 115.31,
+      "median_ms": 19.64,
+      "mean_ms": 19.737,
+      "min_ms": 18.556,
+      "max_ms": 22.975,
+      "throughput": 50.9,
+      "peak_mb": 1347.0,
+      "params": 314639368
+    },
+    {
+      "policy": "SARM",
+      "batch_size": 1,
+      "create_ms": 7.72,
+      "median_ms": 1.073,
+      "mean_ms": 1.163,
+      "min_ms": 1.024,
+      "max_ms": 4.38,
+      "throughput": 931.6,
+      "peak_mb": 1.7,
+      "params": 238596
+    },
+    {
+      "policy": "SARM",
+      "batch_size": 4,
+      "create_ms": 1.27,
+      "median_ms": 1.162,
+      "mean_ms": 1.179,
+      "min_ms": 1.08,
+      "max_ms": 1.764,
+      "throughput": 860.3,
+      "peak_mb": 3.3,
+      "params": 238596
+    },
+    {
+      "policy": "SmolVLA",
+      "batch_size": 1,
+      "create_ms": 4.9,
+      "median_ms": 0.421,
+      "mean_ms": 0.435,
+      "min_ms": 0.396,
+      "max_ms": 0.663,
+      "throughput": 2374.1,
+      "peak_mb": 0.8,
+      "params": 145222
+    },
+    {
+      "policy": "SmolVLA",
+      "batch_size": 4,
+      "create_ms": 0.6,
+      "median_ms": 0.446,
+      "mean_ms": 0.446,
+      "min_ms": 0.428,
+      "max_ms": 0.474,
+      "throughput": 2240.1,
+      "peak_mb": 1.2,
+      "params": 145222
+    },
+    {
+      "policy": "VQ-BeT",
+      "batch_size": 1,
+      "create_ms": 8.73,
+      "median_ms": 0.632,
+      "mean_ms": 0.651,
+      "min_ms": 0.588,
+      "max_ms": 1.231,
+      "throughput": 1582.3,
+      "peak_mb": 47.6,
+      "params": 11847563
+    },
+    {
+      "policy": "VQ-BeT",
+      "batch_size": 4,
+      "create_ms": 6.03,
+      "median_ms": 0.636,
+      "mean_ms": 0.647,
+      "min_ms": 0.588,
+      "max_ms": 0.914,
+      "throughput": 1573.3,
+      "peak_mb": 47.6,
+      "params": 11847563
+    }
+  ],
+  "training": [
+    {
+      "policy": "ACT",
+      "batch_size": 4,
+      "num_steps": 20,
+      "elapsed_sec": 0.092,
+      "steps_per_sec": 217.02,
+      "peak_mb": 5.2,
+      "final_loss": 1.289545,
+      "params": 192286
+    },
+    {
+      "policy": "Diffusion",
+      "batch_size": 4,
+      "num_steps": 20,
+      "elapsed_sec": 0.134,
+      "steps_per_sec": 149.74,
+      "peak_mb": 22.2,
+      "final_loss": 1.073657,
+      "params": 259040
+    }
+  ],
+  "memory": [
+    {
+      "policy": "ACT",
+      "batch_size": 1,
+      "params": 192286,
+      "param_mb": 0.77,
+      "forward_peak_mb": 0.9,
+      "training_peak_mb": 4.5
+    },
+    {
+      "policy": "Diffusion",
+      "batch_size": 1,
+      "params": 259040,
+      "param_mb": 1.04,
+      "forward_peak_mb": 10.7,
+      "training_peak_mb": 19.5
+    },
+    {
+      "policy": "SAC",
+      "batch_size": 1,
+      "params": 428621,
+      "param_mb": 1.71,
+      "forward_peak_mb": 1.1,
+      "training_peak_mb": 11.0
+    },
+    {
+      "policy": "TD-MPC",
+      "batch_size": 1,
+      "params": 36750,
+      "param_mb": 0.15,
+      "forward_peak_mb": 0.1,
+      "training_peak_mb": 0.1
+    },
+    {
+      "policy": "Pi0",
+      "batch_size": 1,
+      "params": 314639368,
+      "param_mb": 1258.56,
+      "forward_peak_mb": 1282.1,
+      "training_peak_mb": 5728.5
+    },
+    {
+      "policy": "SARM",
+      "batch_size": 1,
+      "params": 238596,
+      "param_mb": 0.95,
+      "forward_peak_mb": 1.7,
+      "training_peak_mb": 5.8
+    },
+    {
+      "policy": "SmolVLA",
+      "batch_size": 1,
+      "params": 145222,
+      "param_mb": 0.58,
+      "forward_peak_mb": 0.8,
+      "training_peak_mb": 3.8
+    },
+    {
+      "policy": "VQ-BeT",
+      "batch_size": 1,
+      "params": 11847563,
+      "param_mb": 47.39,
+      "forward_peak_mb": 47.5,
+      "training_peak_mb": 281.2
+    }
+  ]
+}

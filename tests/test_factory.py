@@ -162,6 +162,48 @@ class TestGetPolicyClass:
         cls = get_policy_class("sac")
         assert cls is SACPolicy
 
+    def test_get_policy_class_tdmpc(self):
+        from lerobot_mlx.policies.tdmpc import TDMPCPolicy
+
+        cls = get_policy_class("tdmpc")
+        assert cls is TDMPCPolicy
+
+    def test_get_policy_class_vqbet(self):
+        from lerobot_mlx.policies.vqbet import VQBeTPolicy
+
+        cls = get_policy_class("vqbet")
+        assert cls is VQBeTPolicy
+
+    def test_get_policy_class_sarm(self):
+        from lerobot_mlx.policies.sarm import SARMRewardModel
+
+        cls = get_policy_class("sarm")
+        assert cls is SARMRewardModel
+
+    def test_get_policy_class_pi0(self):
+        from lerobot_mlx.policies.pi0 import Pi0Policy
+
+        cls = get_policy_class("pi0")
+        assert cls is Pi0Policy
+
+    def test_get_policy_class_pi05(self):
+        from lerobot_mlx.policies.pi05 import Pi05Policy
+
+        cls = get_policy_class("pi05")
+        assert cls is Pi05Policy
+
+    def test_get_policy_class_pi0_fast(self):
+        from lerobot_mlx.policies.pi0_fast import Pi0FastPolicy
+
+        cls = get_policy_class("pi0_fast")
+        assert cls is Pi0FastPolicy
+
+    def test_get_policy_class_smolvla(self):
+        from lerobot_mlx.policies.smolvla import SmolVLAPolicy
+
+        cls = get_policy_class("smolvla")
+        assert cls is SmolVLAPolicy
+
     def test_get_policy_class_unknown_raises(self):
         with pytest.raises(ValueError, match="Unknown policy type"):
             get_policy_class("imaginary")
@@ -191,6 +233,48 @@ class TestGetConfigClass:
         cls = get_config_class("sac")
         assert cls is SACConfig
 
+    def test_get_config_class_tdmpc(self):
+        from lerobot_mlx.policies.tdmpc import TDMPCConfig
+
+        cls = get_config_class("tdmpc")
+        assert cls is TDMPCConfig
+
+    def test_get_config_class_vqbet(self):
+        from lerobot_mlx.policies.vqbet import VQBeTConfig
+
+        cls = get_config_class("vqbet")
+        assert cls is VQBeTConfig
+
+    def test_get_config_class_sarm(self):
+        from lerobot_mlx.policies.sarm import SARMConfig
+
+        cls = get_config_class("sarm")
+        assert cls is SARMConfig
+
+    def test_get_config_class_pi0(self):
+        from lerobot_mlx.policies.pi0 import Pi0Config
+
+        cls = get_config_class("pi0")
+        assert cls is Pi0Config
+
+    def test_get_config_class_pi05(self):
+        from lerobot_mlx.policies.pi05 import Pi05Config
+
+        cls = get_config_class("pi05")
+        assert cls is Pi05Config
+
+    def test_get_config_class_pi0_fast(self):
+        from lerobot_mlx.policies.pi0_fast import Pi0FastConfig
+
+        cls = get_config_class("pi0_fast")
+        assert cls is Pi0FastConfig
+
+    def test_get_config_class_smolvla(self):
+        from lerobot_mlx.policies.smolvla import SmolVLAConfig
+
+        cls = get_config_class("smolvla")
+        assert cls is SmolVLAConfig
+
     def test_get_config_class_unknown_raises(self):
         with pytest.raises(ValueError, match="Unknown policy type"):
             get_config_class("imaginary")
@@ -209,9 +293,18 @@ class TestAvailablePolicies:
         assert "diffusion" in result
         assert "sac" in result
 
+    def test_available_policies_includes_all_ten(self):
+        result = available_policies()
+        expected = [
+            "act", "diffusion", "sac", "tdmpc", "vqbet",
+            "sarm", "pi0", "pi05", "pi0_fast", "smolvla",
+        ]
+        for name in expected:
+            assert name in result, f"{name} not found in available_policies()"
+
     def test_available_policies_length(self):
         result = available_policies()
-        assert len(result) >= 3
+        assert len(result) >= 10
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +379,30 @@ class TestDetectType:
 
         config = SACConfig()
         assert _detect_type(config) == "sac"
+
+    def test_detect_type_pi0(self):
+        from lerobot_mlx.policies.pi0 import Pi0Config
+
+        config = Pi0Config()
+        assert _detect_type(config) == "pi0"
+
+    def test_detect_type_pi05(self):
+        from lerobot_mlx.policies.pi05 import Pi05Config
+
+        config = Pi05Config()
+        assert _detect_type(config) == "pi05"
+
+    def test_detect_type_pi0_fast(self):
+        from lerobot_mlx.policies.pi0_fast import Pi0FastConfig
+
+        config = Pi0FastConfig()
+        assert _detect_type(config) == "pi0_fast"
+
+    def test_detect_type_smolvla(self):
+        from lerobot_mlx.policies.smolvla import SmolVLAConfig
+
+        config = SmolVLAConfig()
+        assert _detect_type(config) == "smolvla"
 
     def test_detect_type_unknown_raises(self):
         class UnknownConfig:
