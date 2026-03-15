@@ -434,11 +434,14 @@ def _clone_encoder_layer(layer: "TransformerEncoderLayer") -> "TransformerEncode
     # Reconstruct activation
     act = layer._act
 
+    # Preserve the original dropout rate across all cloned layers
+    dropout_p = layer.dropout.p if hasattr(layer.dropout, 'p') else 0.0
+
     new_layer = TransformerEncoderLayer(
         d_model=d_model,
         nhead=nhead,
         dim_feedforward=dim_feedforward,
-        dropout=0.0,  # Dropout rate doesn't affect weights
+        dropout=dropout_p,
         activation=act,
         norm_first=norm_first,
     )

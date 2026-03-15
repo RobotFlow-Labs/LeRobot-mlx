@@ -57,6 +57,9 @@ class EMAModel:
         for k, v in tree_flatten(model.parameters()):
             if k in self.shadow:
                 self.shadow[k] = self.decay * self.shadow[k] + (1 - self.decay) * v
+            else:
+                # Bootstrap newly added parameters into shadow
+                self.shadow[k] = mx.array(v)
         # Materialize the updated shadow weights
         mx.eval(*self.shadow.values())
 

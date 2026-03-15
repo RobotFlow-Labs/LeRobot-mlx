@@ -70,8 +70,8 @@ def main():
     try:
         from lerobot_mlx.policies.factory import make_policy
         policy = make_policy(args.policy_type)
-    except (ImportError, Exception):
-        # Fallback: simple MLP for testing the training loop
+    except ImportError:
+        # Fallback: simple MLP for testing the training loop (policy factories not yet built)
         import mlx.nn as nn
 
         class _SimpleMLP(nn.Module):

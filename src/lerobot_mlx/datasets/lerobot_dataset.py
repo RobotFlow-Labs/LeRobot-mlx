@@ -177,6 +177,8 @@ class LeRobotDatasetMLX:
             try:
                 # Try vectorized conversion for the whole column
                 col_values = full_df[col].values
+                if len(col_values) == 0:
+                    continue
                 if isinstance(col_values[0], (list, np.ndarray)):
                     # Column contains list/array values - stack them
                     self._column_data[col] = np.stack(

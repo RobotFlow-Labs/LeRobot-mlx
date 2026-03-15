@@ -29,7 +29,8 @@ class Module(_nn.Module):
     def to(self, device: Any = None, dtype: Any = None) -> "Module":
         """No-op for device (MLX unified memory). Casts parameters if dtype specified."""
         if dtype is not None:
-            mapped_dtype = dtype if isinstance(dtype, mx.Dtype) else dtype
+            from .tensor_ops import _map_dtype
+            mapped_dtype = dtype if isinstance(dtype, mx.Dtype) else _map_dtype(dtype)
             params = tree_flatten(self.parameters())
             casted = [(k, v.astype(mapped_dtype)) for k, v in params]
             self.load_weights(casted)

@@ -62,8 +62,8 @@ def main():
     try:
         from lerobot_mlx.policies.factory import make_policy
         policy = make_policy(args.policy_type)
-    except (ImportError, Exception):
-        # Fallback: simple MLP for testing the eval loop
+    except ImportError:
+        # Fallback: simple MLP for testing the eval loop (policy factories not yet built)
         class _SimpleMLP(nn.Module):
             def __init__(self, obs_dim, action_dim, chunk_size):
                 super().__init__()

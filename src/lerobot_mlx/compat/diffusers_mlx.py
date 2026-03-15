@@ -179,7 +179,14 @@ class DDPMScheduler:
                 pred_original, -self.clip_sample_range, self.clip_sample_range
             )
 
-        # Compute coefficients for x_{t-1}
+        # At t=0, return the predicted original directly (no blending needed)
+        if t == 0:
+            return SchedulerOutput(
+                prev_sample=pred_original,
+                pred_original_sample=pred_original,
+            )
+
+        # Compute coefficients for x_{t-1} (safe: t > 0, so beta_prod_t > 0)
         pred_original_coeff = (
             mx.sqrt(alpha_prod_t_prev) * self.betas[t] / beta_prod_t
         )
@@ -189,12 +196,11 @@ class DDPMScheduler:
         pred_prev = pred_original_coeff * pred_original + current_coeff * sample
 
         # Add noise for t > 0
-        if t > 0:
-            noise = mx.random.normal(sample.shape)
-            variance = (
-                self.betas[t] * (1.0 - alpha_prod_t_prev) / (1.0 - alpha_prod_t)
-            )
-            pred_prev = pred_prev + mx.sqrt(variance) * noise
+        noise = mx.random.normal(sample.shape)
+        variance = (
+            self.betas[t] * (1.0 - alpha_prod_t_prev) / (1.0 - alpha_prod_t)
+        )
+        pred_prev = pred_prev + mx.sqrt(variance) * noise
 
         return SchedulerOutput(
             prev_sample=pred_prev,
@@ -209,8 +215,10 @@ class DDPMScheduler:
         Args:
             num_inference_steps: Number of denoising steps.
         """
+        # Match diffusers: start from highest timestep and descend evenly
+        import numpy as _np
         step_ratio = self.num_train_timesteps // num_inference_steps
-        timesteps = list(range(0, self.num_train_timesteps, step_ratio))[::-1]
+        timesteps = _np.arange(0, self.num_train_timesteps)[::-1][::step_ratio].tolist()
         self.timesteps = mx.array(timesteps)
         self.num_inference_steps = num_inference_steps
 
@@ -378,7 +386,9 @@ class DDIMScheduler:
         Args:
             num_inference_steps: Number of denoising steps.
         """
+        # Match diffusers: start from highest timestep and descend evenly
+        import numpy as _np
         step_ratio = self.num_train_timesteps // num_inference_steps
-        timesteps = list(range(0, self.num_train_timesteps, step_ratio))[::-1]
+        timesteps = _np.arange(0, self.num_train_timesteps)[::-1][::step_ratio].tolist()
         self.timesteps = mx.array(timesteps)
         self.num_inference_steps = num_inference_steps
