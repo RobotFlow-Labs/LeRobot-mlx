@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lerobot-mlx"
+version = "0.1.0"
+description = "LeRobot ported to Apple MLX for native Apple Silicon robotics"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "AIFLOW LABS", email = "ilessio@aiflowlabs.io" },
+]
+
+dependencies = [
+    "mlx>=0.31.0",
+    "numpy>=2.0.0",
+    "scipy>=1.14.0",
+    "huggingface-hub>=1.0.0",
+    "safetensors>=0.4.0",
+    "draccus==0.10.0",
+    "pillow>=10.0.0",
+    "opencv-python>=4.8.0",
+    "jsonlines>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-xdist>=3.5",
+    "ruff>=0.4.0",
+]
+# Cross-framework validation (optional, only for comparison tests)
+torch = [
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+    "einops>=0.8.0",
+]
+
+[project.scripts]
+lerobot-mlx-train = "lerobot_mlx.scripts.train:main"
+lerobot-mlx-eval = "lerobot_mlx.scripts.eval:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow",
+    "requires_torch: marks tests that need PyTorch for cross-framework validation",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
